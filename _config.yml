@@ -11,7 +11,7 @@ github_repo: "https://github.com/SunJiFengPlus/SunJiFengPlus.github.io.git" # yo
 
 # Sidebar settings
 sidebar: true                           # whether or not using Sidebar.
-sidebar-about-description: "最好维护的代码就是还没写出来的代码"
+sidebar-about-description: "Think more, code less."
 sidebar-avatar: /img/about-BY-gentle.jpg      # use absolute URL, seeing it's used in both `/` and `/about/`
 
 
