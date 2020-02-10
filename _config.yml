@@ -1,9 +1,9 @@
 # Site settings
 title: Blog
 SEOTitle: 孙继峰的博客
-header-img: img/th.jpg
+header-img: img/home.jpg
 email: SJF_159@outlook.com
-description: "Think more, code less."
+description: Think more, code less.
 keyword: "孙继峰的博客, SunJiFeng, SunJiFengPlus, 孙继峰"
 url: "https://sunjifengplus.github.io/"          # your host, for absolute URL
 baseurl: ""      # for example, '/blog' if your blog hosted on 'host/blog'
