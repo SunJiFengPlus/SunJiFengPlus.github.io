@@ -2,7 +2,7 @@
 title: Blog
 SEOTitle: 孙继峰的博客
 header-img: img/home.jpg
-email: SJF_159@outlook.com
+email: sun.jifeng@outlook.com
 description: Think more, code less.
 keyword: "孙继峰的博客, SunJiFeng, SunJiFengPlus, 孙继峰"
 url: "https://sunjifengplus.github.io/"          # your host, for absolute URL
@@ -22,7 +22,7 @@ RSS: false
 #zhihu_username:     qiubaiying
 github_username:    SunJiFengPlus
 #facebook_username:  baiying.qiu.7
-jianshu_username:   e6e7a974b57a
+#jianshu_username:   e6e7a974b57a
 #twitter_username:   qiubaiying
 
 
