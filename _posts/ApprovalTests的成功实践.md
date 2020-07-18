@@ -72,3 +72,46 @@ ApprovalTest仅仅适用于有返回值的方法, 对于没有返回值的方法
 
 
 上面的方法是一个电商项目的一隅, 大意就是传入商品gid, 和这个商品关税、运费、Sku最低价、Sku最高价, 根据这些来更新数据库中的商品价格, 进而触发生成改价日志, 触发缓存更新.
+
+```GoodsInfoPriceDTO``` 代码如下
+
+```java
+@Data
+@Accessors(chain = true)
+public class GoodsInfoPriceDTO {
+
+    private String gid;
+
+    /**
+     * 关税
+     */
+    private Integer customsDuties;
+
+    /**
+     * 商品原价
+     */
+    private Long goodsPrice;
+
+    /**
+     * 最高价格
+     */
+    private Long maxPrice;
+
+    /**
+     * 最低价格
+     */
+    private Long minPrice;
+
+    /**
+     * 商品来源渠道 1:国内现货 2:国外现货 3:代购 4:现货
+     */
+    private Integer goodsChannelSource;
+
+    /**
+     * 运费，计算总价
+     */
+    private Integer shippingRate;
+```
+
+是典型的[贫血模型](https://www.ituring.com.cn/article/25)
+
