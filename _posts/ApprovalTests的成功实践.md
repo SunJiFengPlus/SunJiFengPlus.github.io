@@ -10,6 +10,10 @@ tags:
 	- 测试
 ---
 
+# 更新中
+
+
+
 年初去 ThoughtWorks 参加道长的[镀金玫瑰重构实践](https://www.jianshu.com/p/360e735cd3d5)里面接触了一个有趣的重构工具--[ApprovalTests](https://github.com/approvals)
 
 
@@ -34,9 +38,37 @@ tags:
 
 ##### 解决方案
 
+这个时候就改ApprovalTest出场了.
+
+加缓存前, 得到一份```方法输入输出快照```, 加缓存后再得到一份```方法输入输出快照```, 对比```快照```是否一致, 不一致查原因, 然后想办法让它一致.
+
+##### 开始码
+
+没加缓存之前核心代码是这个样子的 (逻辑不重要, 因为我加缓存的时候也压根没看原逻辑)
+
+```java
+List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList, SpuTypeEnum.toMountedType(SpuTypeEnum.SELLER.getType()));
+```
 
 
 
+```xml
+    <select id="listMspuNoByGidList" resultType="string">
+        select sp.mspu_no as mspu_no from
+        spu_art_goods_map as art,
+        spu_main_art_map as sp
+        where art.aspu_no = sp.aspu_no
+        and art.record_status = 1
+        and sp.record_status = 1
+        and art.gid in
+        <foreach collection="gidList" item="gid" separator="," open="(" close=")">
+            #{gid}
+        </foreach>
+        and art.mounted_type = #{type}
+    </select>
+```
+
+依照上面的SQL从数据库中查出尽可能全的样本作为方法输入
 
 ---
 
