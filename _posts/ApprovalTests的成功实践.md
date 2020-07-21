@@ -76,7 +76,7 @@ List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList,
 		@Test
     public void test() {
         CombinationApprovals.verifyAllCombinations(
-          			// 将要被做成快照的方法
+          			// 要被做成快照的方法
                 this::foo,
           			// 为了准备尽可能的测试数据, 我从网上找了一个全组合的算法
           			// allCombine(1,2) = [[1], [2], [1,2]]
@@ -95,17 +95,17 @@ List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList,
         );
     }
 
-		// 将要被做成快照的方法
+		// 要被做成快照的方法
     public List<String> foo(List<String> gidList, Integer mountedType) {
         return spuMainArtMapMapper.listMspuNoByGidList(gidList, mountedType);
     }
 ```
 
-得到了一份近千行的方法输入输出快照
+得到了一份近千行的方法输入输出快照, 左边是输入, 右边是输出
 
 ![方法快照](https://i.loli.net/2020/07/21/aMudBE5nZbJUt6q.png)
 
-
+有了这个就有了重构防护网, 无论如何重构, 结果最终与这个快照一致即可
 
 ---
 
