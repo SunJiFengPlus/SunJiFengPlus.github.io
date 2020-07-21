@@ -164,39 +164,76 @@ ApprovalTest仅仅适用于有返回值的方法, 对于没有返回值的方法
 @Data
 @Accessors(chain = true)
 public class GoodsInfoPriceDTO {
-
     private String gid;
-
     /**
      * 关税
      */
     private Integer customsDuties;
-
     /**
      * 商品原价
      */
     private Long goodsPrice;
-
     /**
      * 最高价格
      */
     private Long maxPrice;
-
     /**
      * 最低价格
      */
     private Long minPrice;
-
     /**
      * 商品来源渠道 1:国内现货 2:国外现货 3:代购 4:现货
      */
     private Integer goodsChannelSource;
-
     /**
      * 运费，计算总价
      */
     private Integer shippingRate;
 ```
 
-是典型的[贫血模型](https://www.ituring.com.cn/article/25)
+这个是典型的[贫血模型](https://www.ituring.com.cn/article/25). 领域模型没有任务行为, 一切都交给Service代为处理.
+
+一个合格的领域模型要实现自检&自治功能.
+
+首先分析一下这个哪些自检&自治功能被托管给了Service
+
+``` java
+		public void updateGoodsPrice(GoodsInfoPriceDTO goodsInfoPriceDTO) throws ApiException {
+				// 这一步应该归于领域模型的自检, 应该放到领域模型中
+        if (goodsInfoPriceDTO == null || goodsInfoPriceDTO.getShippingRate() == null) {
+            throw new ApiException(GoodsCodeEnum.GOODS_PRICE_MODIFIED_FAILED);
+        }
+
+        GoodsInfoPriceDTO oldGoodsInfo = getGoodsInfoPriceByGid(goodsInfoPriceDTO.getGid());
+        // 这一步是领域模型之间的数据传递, 也应该放到领域模型中
+        GoodsInfoDO goodsInfoUpdate = new GoodsInfoDO();
+        BeanUtils.copyProperties(goodsInfoPriceDTO, goodsInfoUpdate);
+        goodsInfoUpdate.setShippingRate(null);
+
+        Integer customsDuties = goodsInfoPriceDTO.getCustomsDuties() == null
+                ? oldGoodsInfo.getCustomsDuties() : goodsInfoPriceDTO.getCustomsDuties();
+        Long goodsPrice = goodsInfoPriceDTO.getGoodsPrice() == null
+                ? oldGoodsInfo.getGoodsPrice() : goodsInfoPriceDTO.getGoodsPrice();
+        //总价
+        Long price = (long) customsDuties + goodsPrice + (long) goodsInfoPriceDTO.getShippingRate();
+        goodsInfoUpdate.setPrice(price);
+
+        //商品价格信息更新需记价格log
+        if (!goodsPrice.equals(oldGoodsInfo.getGoodsPrice())) {
+            goodsInfoUpdate.setLastPrice(oldGoodsInfo.getGoodsPrice())
+                    .setPriceModifiedTime(LocalDateTime.now());
+            //价格更改log
+            GoodsPriceModifiedLogDO logDO = new GoodsPriceModifiedLogDO();
+            logDO.setGid(goodsInfoPriceDTO.getGid())
+                    .setLastGoodsPrice(oldGoodsInfo.getGoodsPrice())
+                    .setGoodsPrice(goodsInfoUpdate.getGoodsPrice());
+            priceModifiedLogMapper.insert(logDO);
+        }
+
+        log.info("商品更新价格，旧： {}, 新： {}", JsonUtil.toJson(oldGoodsInfo), JsonUtil.toJson(goodsInfoUpdate));
+        update(goodsInfoUpdate, new LambdaQueryWrapper<GoodsInfoDO>()
+                .eq(GoodsInfoDO::getGid, goodsInfoPriceDTO.getGid()));
+        goodsRedisService.updateGoodsByGid(goodsInfoPriceDTO.getGid());
+    }
+```
 
