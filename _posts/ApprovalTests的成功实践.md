@@ -70,6 +70,43 @@ List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList,
 
 依照上面的SQL从数据库中查出尽可能全的样本作为方法输入
 
+运行测试用例
+
+```java
+		@Test
+    public void test() {
+        CombinationApprovals.verifyAllCombinations(
+          			// 将要被做成快照的方法
+                this::foo,
+          			// 为了准备尽可能的测试数据, 我从网上找了一个全组合的算法
+          			// allCombine(1,2) = [[1], [2], [1,2]]
+                allCombine(Arrays.asList(
+                        "10135729615997",
+                        "13986533400040",
+                        "10074614117237",
+                        "10079230004353",
+                        "10333329717653",
+                        "92345987858551",
+                        "92345284357998",
+                        "92345388758269",
+                        "92345944958270"
+                )).toArray(new List[]{}),
+                new Integer[]{1, 2}
+        );
+    }
+
+		// 将要被做成快照的方法
+    public List<String> foo(List<String> gidList, Integer mountedType) {
+        return spuMainArtMapMapper.listMspuNoByGidList(gidList, mountedType);
+    }
+```
+
+得到了一份近千行的方法输入输出快照
+
+![方法快照](https://i.loli.net/2020/07/21/aMudBE5nZbJUt6q.png)
+
+
+
 ---
 
 
