@@ -26,7 +26,7 @@ tags:
 
 
 
-**一句话说明它的好处: 可在没有测试、不懂业务的情况下去重构**
+**一句话说明它的好处: 可在没有测试、不懂业务的情况下安全重构**
 
 
 
@@ -34,7 +34,7 @@ tags:
 
 ##### 背景
 
-项目初期, 查询完全走数据库, 担心上线后数据库撑不住, 所以想加缓存扛一下. 要加缓存, 就有数据一致性, 那如何保证我加完缓存之前和加缓存之后数据是一直的呢?
+项目初期, 查询完全走数据库, 担心上线后数据库撑不住, 所以想加缓存扛一下. 要加缓存, 就有数据一致性, 那如何保证我加完缓存之前和加缓存之后数据是一致的呢?
 
 ##### 解决方案
 
@@ -79,7 +79,7 @@ List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList,
           			// 要被做成快照的方法
                 this::foo,
           			// 为了准备尽可能的测试数据, 我从网上找了一个全组合的算法
-          			// allCombine(1,2) = [[1], [2], [1,2]]
+          			// allCombine(1,2,3) = 1,2,3,12,13,23,123
                 allCombine(Arrays.asList(
                         "10135729615997",
                         "13986533400040",
@@ -109,131 +109,118 @@ List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList,
 
 ---
 
+###理想总是美好的
 
+ApprovalTest适合于有返回值的方法, 那么没有返回值的方法怎么做? **找出输入与输出**
 
-### 理想总是美好的
+##### 背景
 
-ApprovalTest仅仅适用于有返回值的方法, 对于没有返回值的方法没有一点办法
-
-``` java
-    public void updateGoodsPrice(GoodsInfoPriceDTO goodsInfoPriceDTO) throws ApiException {
-
-        if (goodsInfoPriceDTO == null || goodsInfoPriceDTO.getShippingRate() == null) {
-            throw new ApiException(GoodsCodeEnum.GOODS_PRICE_MODIFIED_FAILED);
-        }
-
-        GoodsInfoPriceDTO oldGoodsInfo = getGoodsInfoPriceByGid(goodsInfoPriceDTO.getGid());
-        GoodsInfoDO goodsInfoUpdate = new GoodsInfoDO();
-        BeanUtils.copyProperties(goodsInfoPriceDTO, goodsInfoUpdate);
-        goodsInfoUpdate.setShippingRate(null);
-
-        Integer customsDuties = goodsInfoPriceDTO.getCustomsDuties() == null
-                ? oldGoodsInfo.getCustomsDuties() : goodsInfoPriceDTO.getCustomsDuties();
-        Long goodsPrice = goodsInfoPriceDTO.getGoodsPrice() == null
-                ? oldGoodsInfo.getGoodsPrice() : goodsInfoPriceDTO.getGoodsPrice();
-        //总价
-        Long price = (long) customsDuties + goodsPrice + (long) goodsInfoPriceDTO.getShippingRate();
-        goodsInfoUpdate.setPrice(price);
-
-        //商品价格信息更新需记价格log
-        if (!goodsPrice.equals(oldGoodsInfo.getGoodsPrice())) {
-            goodsInfoUpdate.setLastPrice(oldGoodsInfo.getGoodsPrice())
-                    .setPriceModifiedTime(LocalDateTime.now());
-            //价格更改log
-            GoodsPriceModifiedLogDO logDO = new GoodsPriceModifiedLogDO();
-            logDO.setGid(goodsInfoPriceDTO.getGid())
-                    .setLastGoodsPrice(oldGoodsInfo.getGoodsPrice())
-                    .setGoodsPrice(goodsInfoUpdate.getGoodsPrice());
-            priceModifiedLogMapper.insert(logDO);
-        }
-
-        log.info("商品更新价格，旧： {}, 新： {}", JsonUtil.toJson(oldGoodsInfo), JsonUtil.toJson(goodsInfoUpdate));
-        update(goodsInfoUpdate, new LambdaQueryWrapper<GoodsInfoDO>()
-                .eq(GoodsInfoDO::getGid, goodsInfoPriceDTO.getGid()));
-        goodsRedisService.updateGoodsByGid(goodsInfoPriceDTO.getGid());
-    }
-```
-
-
-
-上面的方法是一个电商项目的一隅, 大意就是传入商品gid, 和这个商品关税、运费、Sku最低价、Sku最高价, 根据这些来更新数据库中的商品价格, 进而触发生成改价日志, 触发缓存更新.
-
-```GoodsInfoPriceDTO``` 代码如下
+线上发现一个BUG, 把空集合同步到Redis上了, 定位到方法
 
 ```java
-@Data
-@Accessors(chain = true)
-public class GoodsInfoPriceDTO {
-    private String gid;
-    /**
-     * 关税
-     */
-    private Integer customsDuties;
-    /**
-     * 商品原价
-     */
-    private Long goodsPrice;
-    /**
-     * 最高价格
-     */
-    private Long maxPrice;
-    /**
-     * 最低价格
-     */
-    private Long minPrice;
-    /**
-     * 商品来源渠道 1:国内现货 2:国外现货 3:代购 4:现货
-     */
-    private Integer goodsChannelSource;
-    /**
-     * 运费，计算总价
-     */
-    private Integer shippingRate;
-```
-
-这个是典型的[贫血模型](https://www.ituring.com.cn/article/25). 领域模型没有任务行为, 一切都交给Service代为处理.
-
-一个合格的领域模型要实现自检&自治功能.
-
-首先分析一下这个哪些自检&自治功能被托管给了Service
-
-``` java
-		public void updateGoodsPrice(GoodsInfoPriceDTO goodsInfoPriceDTO) throws ApiException {
-				// 这一步应该归于领域模型的自检, 应该放到领域模型中
-        if (goodsInfoPriceDTO == null || goodsInfoPriceDTO.getShippingRate() == null) {
-            throw new ApiException(GoodsCodeEnum.GOODS_PRICE_MODIFIED_FAILED);
+		/**
+		 * 功能: 刷新SPU缓存, 
+		 * 实现: 查库, 塞到Redis里
+		 */
+		@Override
+    public void refreshArtSpuMainSpu(Collection<String> aspuNoList) {
+        redisUtil.hDel(artSpuMainSpuKey, aspuNoList);
+        Map<String, List<String>> map = listDbMspuNoByAspuNo(aspuNoList);
+        List<String> mspuNoList = new ArrayList<>();
+        map.forEach((aspuNo, list) -> {
+            mspuNoList.addAll(list);
+        });
+        if (CollectionUtils.isEmpty(mspuNoList)) {
+            return;
         }
-
-        GoodsInfoPriceDTO oldGoodsInfo = getGoodsInfoPriceByGid(goodsInfoPriceDTO.getGid());
-        // 这一步是领域模型之间的数据传递, 也应该放到领域模型中
-        GoodsInfoDO goodsInfoUpdate = new GoodsInfoDO();
-        BeanUtils.copyProperties(goodsInfoPriceDTO, goodsInfoUpdate);
-        goodsInfoUpdate.setShippingRate(null);
-
-        Integer customsDuties = goodsInfoPriceDTO.getCustomsDuties() == null
-                ? oldGoodsInfo.getCustomsDuties() : goodsInfoPriceDTO.getCustomsDuties();
-        Long goodsPrice = goodsInfoPriceDTO.getGoodsPrice() == null
-                ? oldGoodsInfo.getGoodsPrice() : goodsInfoPriceDTO.getGoodsPrice();
-        //总价
-        Long price = (long) customsDuties + goodsPrice + (long) goodsInfoPriceDTO.getShippingRate();
-        goodsInfoUpdate.setPrice(price);
-
-        //商品价格信息更新需记价格log
-        if (!goodsPrice.equals(oldGoodsInfo.getGoodsPrice())) {
-            goodsInfoUpdate.setLastPrice(oldGoodsInfo.getGoodsPrice())
-                    .setPriceModifiedTime(LocalDateTime.now());
-            //价格更改log
-            GoodsPriceModifiedLogDO logDO = new GoodsPriceModifiedLogDO();
-            logDO.setGid(goodsInfoPriceDTO.getGid())
-                    .setLastGoodsPrice(oldGoodsInfo.getGoodsPrice())
-                    .setGoodsPrice(goodsInfoUpdate.getGoodsPrice());
-            priceModifiedLogMapper.insert(logDO);
+        Map<String, MainSpuMapRedisDTO> mainSpuMap = listDbMainSpuStatus(mspuNoList).stream().collect(Collectors.toMap(MainSpuMapRedisDTO::getMspuNo, mainSpuMapRedisDTO -> mainSpuMapRedisDTO));
+        Map<String, List<MainSpuMapRedisDTO>> redisMap = new HashMap<>(aspuNoList.size());
+        map.forEach((aspuNo, list) -> {
+            List<MainSpuMapRedisDTO> redisList = new ArrayList<>(list.size());
+            list.forEach(mspuNo -> {
+                        if (mainSpuMap.containsKey(mspuNo)) {
+                            redisList.add(mainSpuMap.get(mspuNo));
+                        }
+                    }
+            );
+            redisMap.put(aspuNo, redisList);
+        });
+        if (MapUtils.isNotEmpty(redisMap)) {
+            redisUtil.hMSet(artSpuMainSpuKey, redisMap);
         }
-
-        log.info("商品更新价格，旧： {}, 新： {}", JsonUtil.toJson(oldGoodsInfo), JsonUtil.toJson(goodsInfoUpdate));
-        update(goodsInfoUpdate, new LambdaQueryWrapper<GoodsInfoDO>()
-                .eq(GoodsInfoDO::getGid, goodsInfoPriceDTO.getGid()));
-        goodsRedisService.updateGoodsByGid(goodsInfoPriceDTO.getGid());
     }
 ```
 
+看了一会之后发现我看不懂, 理解不了其中的意图. 理解不来就不强理解了
+
+**找出输入与输出**
+
+- 看方法签名, 输入get✔️
+
+```java
+public void refreshArtSpuMainSpu(Collection<String> aspuNoList) {
+```
+
+- 方法核心是同步数据到Redis上, 那最后输入到Redis上的数据就是输出, 输出get✔️
+
+```java
+if (MapUtils.isNotEmpty(redisMap)) {
+		redisUtil.hMSet(artSpuMainSpuKey, redisMap);
+}
+```
+
+**找出尽可能全的测试数据**
+
+```java
+    @Test
+    public void test() {
+        CombinationApprovals.verifyAllCombinations(
+                this::foo,
+                new MainSpuRedisService[] {
+                		operationRedisService, 
+                  	sellerRedisService
+                },
+                allCombine(Arrays.asList(
+                        "08304580801526034340",
+                        "10271318551717248376",
+                        "13931939071134885758",
+                        "18612515945640360898",
+                        "19370616753047978750",
+                        "20183344930053283300",
+                        "26969491939627980178",
+                        "28590434578151405250",
+                        "44483622953739119645",
+                        "44611707819114472953",
+                        "45140852831672001193",
+                        "45397097428735810632",
+                        "52541784473733135239",
+                        "54209586478458636090",
+                        "64225367812808144395",
+                        "75705776945714812004",
+                        "80215606372317400617",
+                        "87524056439862421934",
+                        "90660551723112007748"
+                )).toArray(new Set[]{})
+        );
+    }
+
+    public Map<String, List<MainSpuMapRedisDTO>> foo(MainSpuRedisService service, Collection<String> aspuNoList) {
+        return service.foo(aspuNoList);
+    }
+```
+
+**如何证明测试数据全面**
+
+以 code coverage 运行单元测试即可
+
+<img src="https://i.loli.net/2020/07/24/zQC2TfAmVpNlYEG.png" style="zoom:40%;" />
+
+
+
+再或者这里也可以
+
+<img src="https://i.loli.net/2020/07/24/cB2U5zb6vN83MTV.png" style="zoom:50%;" />
+
+
+
+运行结束后方法旁边
