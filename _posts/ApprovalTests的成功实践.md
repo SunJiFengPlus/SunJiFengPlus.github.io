@@ -214,5 +214,9 @@ if (MapUtils.isNotEmpty(redisMap)) {
 
 
 
-运行结束后方法旁边
+运行结束后方法旁边会显示测试用例的覆盖信息
+
+<img src="https://i.loli.net/2020/07/27/YWfct9X8ySiGMze.png" style="zoom:30%;" />
+
+然后调整测试数据把这些全部变为绿色就可以证明已经全部覆盖了
 
