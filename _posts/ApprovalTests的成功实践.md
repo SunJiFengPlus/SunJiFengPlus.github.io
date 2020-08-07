@@ -10,8 +10,6 @@ tags:
 	- 测试
 ---
 
-# 更新中
-
 
 
 年初去 ThoughtWorks 参加道长的[镀金玫瑰重构实践](https://www.jianshu.com/p/360e735cd3d5)里面接触了一个有趣的重构工具--[ApprovalTests](https://github.com/approvals)
@@ -218,5 +216,5 @@ if (MapUtils.isNotEmpty(redisMap)) {
 
 <img src="https://i.loli.net/2020/07/27/YWfct9X8ySiGMze.png" style="zoom:30%;" />
 
-然后调整测试数据把这些全部变为绿色就可以证明已经全部覆盖了
+然后调整测试数据把这些全部变为绿色就可以证明测试数据是全面的
 
