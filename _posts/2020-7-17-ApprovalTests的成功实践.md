@@ -10,11 +10,7 @@ tags:
 	- 测试
 ---
 
-
-
 年初去 ThoughtWorks 参加道长的[镀金玫瑰重构实践](https://www.jianshu.com/p/360e735cd3d5)里面接触了一个有趣的重构工具--[ApprovalTests](https://github.com/approvals)
-
-
 
 不了解这个工具的可以看一下这几个视频:
 
