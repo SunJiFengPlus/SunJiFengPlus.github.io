@@ -67,13 +67,13 @@ List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList,
 运行测试用例
 
 ```java
-		@Test
+    @Test
     public void test() {
         CombinationApprovals.verifyAllCombinations(
-          			// 要被做成快照的方法
+                // 要被做成快照的方法
                 this::foo,
-          			// 为了准备尽可能的测试数据, 我从网上找了一个全组合的算法
-          			// allCombine(1,2,3) = 1,2,3,12,13,23,123
+          		// 为了准备尽可能的测试数据, 我从网上找了一个全组合的算法
+          		// allCombine(1,2,3) = 1,2,3,12,13,23,123
                 allCombine(Arrays.asList(
                         "10135729615997",
                         "13986533400040",
@@ -89,7 +89,7 @@ List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList,
         );
     }
 
-		// 要被做成快照的方法
+    // 要被做成快照的方法
     public List<String> foo(List<String> gidList, Integer mountedType) {
         return spuMainArtMapMapper.listMspuNoByGidList(gidList, mountedType);
     }
