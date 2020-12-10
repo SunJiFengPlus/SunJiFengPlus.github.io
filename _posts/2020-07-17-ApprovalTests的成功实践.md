@@ -2,7 +2,7 @@
 layout:     post
 title:      ApprovalTests的成功实践
 subtitle:   
-date:       2020-7-17
+date:       2020-07-17
 author:     孙继峰
 header-img: img/th.jpg
 catalog: true
