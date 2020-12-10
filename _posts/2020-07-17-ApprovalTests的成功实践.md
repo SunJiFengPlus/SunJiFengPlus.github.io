@@ -103,7 +103,7 @@ List<String> sellerMspuNoList = spuMainArtMapMapper.listMspuNoByGidList(gidList,
 
 ---
 
-###理想总是美好的
+### 理想总是美好的
 
 ApprovalTest适合于有返回值的方法, 那么没有返回值的方法怎么做? **找出输入与输出**
 
@@ -159,7 +159,7 @@ public void refreshArtSpuMainSpu(Collection<String> aspuNoList) {
 
 ```java
 if (MapUtils.isNotEmpty(redisMap)) {
-		redisUtil.hMSet(artSpuMainSpuKey, redisMap);
+    redisUtil.hMSet(artSpuMainSpuKey, redisMap);
 }
 ```
 
